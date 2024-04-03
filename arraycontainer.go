@@ -2,6 +2,7 @@ package roaring
 
 import (
 	"fmt"
+	"sort"
 )
 
 type arrayContainer struct {
@@ -674,7 +675,16 @@ func (ac *arrayContainer) iandNotRun16(rc *runContainer16) container {
 		ac.content = ac.content[:0]
 		return ac
 	}
-	current_run := 0
+
+	// Start with the first run that is not completely before the array container.
+	current_run := sort.Search(len(rc.iv), func(i int) bool {
+		return !(rc.iv[i].last() < ac.content[0])
+	})
+	if current_run == len(rc.iv) {
+		// All runs are completely before the array container.
+		return ac
+	}
+
 	// All values in [start_run, end_end] are part of the run
 	start_run := rc.iv[current_run].start
 	end_end := start_run + rc.iv[current_run].length
